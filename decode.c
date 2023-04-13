@@ -28,5 +28,5 @@ int main(int argc, char const *argv[])
         printf("No such codec %c", decodec);
         return 1;
     }
-    return originalText;
+    printf("%c", originalText);
 }

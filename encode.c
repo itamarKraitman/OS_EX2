@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <dlfcn.h>
 #include "codecA.h"
 #include "codecB.h"
 
@@ -28,5 +29,5 @@ int main(int argc, char const *argv[])
         printf("No such codec %c", codec);
         return 1;
     }
-    return code;
+    printf("%c", code);
 }
