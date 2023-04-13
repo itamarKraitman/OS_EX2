@@ -4,11 +4,12 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 
-char* codec(char* text)
+extern char *encodeA(char *text)
 {
     int len = strlen(text);
-    char* code = malloc(len + 1);
+    char *code = malloc(len + 1);
     for (int i = 0; i < len; i++)
     {
         if (isupper(text[i]))
@@ -27,7 +28,7 @@ char* codec(char* text)
     return code;
 }
 
-char* decodec(char* code)
+extern char *decodeA(char *code)
 {
-    return codec(code);
+    return encodeA(code);
 }
