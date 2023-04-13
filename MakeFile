@@ -1,0 +1,31 @@
+CC=gcc
+CFLAGS=-Wall -Wextra -fPIC
+LIBRARIES_NAMES=libcodecA.so libcodecB.so
+LIBRARIES_PATH=-libcodecA.so -libcodecB.so
+
+default: encode decode
+
+encode: encode.o $(LIBRARIES)
+	$(CC) -o encode encode.o -L. $(LIBRARIES_PATH)
+
+decode: decode.o $(LIBRARIES)
+	$(CC) -o encode encode.o -L. $(LIBRARIES_PATH)
+
+libcodecA.so: codecA.o
+	$(CC) -shared -o libcodecA.so codecA.o
+
+libcodecB.so: codecB.o
+	$(CC) -shared -o libcodecB.so codecB.o
+
+codecA.o: codecA.c codecA.h
+	$(CC) $(CFLAGS) -c codecA.c -o codecA.o 
+
+codecB.o: codecB.c codecB.h
+	$(CC) $(CFLAGS) -c codecB.c -o codecB.o 
+
+encode.o: encode.c
+	$(CC) $(CFLAGS) -c encode.c
+
+clean:
+	rm -f encode decode $(LIBRARIES_NAMES) *.o 
+

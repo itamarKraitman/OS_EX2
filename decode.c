@@ -61,6 +61,7 @@ int main(int argc, char const *argv[])
         printf("No such codec %c", decodec);
         return 1;
     }
+    
     printf("%c", originalText);
 
 

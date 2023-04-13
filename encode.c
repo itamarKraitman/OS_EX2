@@ -62,6 +62,7 @@ int main(int argc, char const *argv[])
         printf("No such codec %c", codec);
         return 1;
     }
+    
     printf("%c", code);
 
     dlclose(codecA_handle);
