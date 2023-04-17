@@ -21,8 +21,7 @@ extern char *encodeB(char *text)
         //     code[i] = (text[i] + 3 - 'a') % 26 + 'a';
         // }
 
-        code[i] = (text[i] + 3) % 255; //https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.quora.com%2FWhat-are-extended-ASCII-characters&psig=AOvVaw34jngRYohO2dxBLH1mCDet&ust=1681454680319000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCNDWlfqgpv4CFQAAAAAdAAAAABAu
-
+        code[i] = (text[i] + 3) % 255; // https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.quora.com%2FWhat-are-extended-ASCII-characters&psig=AOvVaw34jngRYohO2dxBLH1mCDet&ust=1681454680319000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCNDWlfqgpv4CFQAAAAAdAAAAABAu
     }
 
     return code;
@@ -30,5 +29,22 @@ extern char *encodeB(char *text)
 
 extern char *decodeB(char *code)
 {
-    return encodeB(code);
+    // return encodeB(code);
+    int len = strlen(code);
+    char *originalText = malloc(len + 1);
+    for (int i = 0; i < len; i++)
+    {
+        // if (isupper(text[i]))
+        // {
+        //     code[i] = (text[i] + 3 - 'A') % 26 + 'A';
+        // }
+        // else // small letter for sure
+        // {
+        //     code[i] = (text[i] + 3 - 'a') % 26 + 'a';
+        // }
+
+        originalText[i] = (code[i] - 3) % 255; // https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.quora.com%2FWhat-are-extended-ASCII-characters&psig=AOvVaw34jngRYohO2dxBLH1mCDet&ust=1681454680319000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCNDWlfqgpv4CFQAAAAAdAAAAABAu
+    }
+
+    return originalText;
 }

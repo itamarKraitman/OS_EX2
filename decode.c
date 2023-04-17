@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 
     // get function pinters
     typedef char* (*decodeA)(char*);
-    decodeA dcodeA = (decodeA)dlsym(decodecA_handle, "codeA");
+    decodeA dcodeA = (decodeA)dlsym(decodecA_handle, "decodeA");
     if (dcodeA == NULL)
     {
         printf("Error: %s", dlerror());
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     }
 
     typedef char* (*decodeB)(char*);
-    decodeB dcodeB = (decodeB)dlsym(decodecB_handle, "codeB");
+    decodeB dcodeB = (decodeB)dlsym(decodecB_handle, "decodeB");
     if (dcodeB == NULL)
     {
         printf("Error: %s", dlerror());
