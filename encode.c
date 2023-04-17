@@ -4,7 +4,7 @@
 #include "codecA.h"
 #include "codecB.h"
 
-int main(int argc, char const *argv[])
+int main(int argc, char *argv[])
 {
     if (argc != 3)
     {
@@ -13,37 +13,36 @@ int main(int argc, char const *argv[])
     }
 
     // load the libraries
-    void* codecA_handle = dlopen("libcodecA.so", RTLD_NOW);
+    void *codecA_handle = dlopen("libcodecA.so", RTLD_NOW);
     if (codecA_handle == NULL)
     {
-        printf("Error has occured while opening codecA_handler");
+        printf("Error: %s", dlerror());
         return 1;
     }
-    
-    void* codecB_handle = dlopen("libcodecB.so", RTLD_NOW);
+
+    void *codecB_handle = dlopen("libcodecB.so", RTLD_NOW);
     if (codecB_handle == NULL)
     {
-        printf("Error has occured while opening codecB_handler");
+        printf("Error: %s", dlerror());
         return 1;
     }
 
     // get function pinters
-    typedef char* (*encodeA)(char*);
+    typedef char *(*encodeA)(char *);
     encodeA codeA = (encodeA)dlsym(codecA_handle, "codeA");
     if (codeA == NULL)
     {
-        printf("Error has occured while creating pinter to encodeA");
+        printf("Error: %s", dlerror());
         return 1;
     }
 
-    typedef char* (*encodeB)(char*);
-    encodeB codeB = (encodeB)dlsym(codecB_handle, "codeA");
-    if (codeA == NULL)
+    typedef char *(*encodeB)(char *);
+    encodeB codeB = (encodeB)dlsym(codecB_handle, "codeB");
+    if (codeB == NULL)
     {
-        printf("Error has occured while creating pinter to encodeA");
+        printf("Error: %s", dlerror());
         return 1;
     }
-
 
     char *codec = argv[1];
     char *message = argv[2];
@@ -59,11 +58,11 @@ int main(int argc, char const *argv[])
     }
     else
     {
-        printf("No such codec %c", codec);
+        printf("No such codec %s", codec);
         return 1;
     }
-    
-    printf("%c", code);
+
+    printf("%s", code);
 
     dlclose(codecA_handle);
     dlclose(codecB_handle);

@@ -10,7 +10,7 @@ extern char *encodeB(char *text)
 {
     int len = strlen(text);
     char *code = malloc(len + 1);
-    for (size_t i = 0; i < len; i++)
+    for (int i = 0; i < len; i++)
     {
         // if (isupper(text[i]))
         // {

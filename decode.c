@@ -4,7 +4,7 @@
 #include "codecA.h"
 #include "codecB.h"
 
-int main(int argc, char const *argv[])
+int main(int argc, char *argv[])
 {
     if (argc != 3)
     {
@@ -16,14 +16,14 @@ int main(int argc, char const *argv[])
     void* decodecA_handle = dlopen("libcodecA.so", RTLD_NOW);
     if (decodecA_handle == NULL)
     {
-        printf("Error has occured while opening decodecA_handler");
+        printf("Error: %s", dlerror());
         return 1;
     }
     
     void* decodecB_handle = dlopen("libcodecB.so", RTLD_NOW);
     if (decodecB_handle == NULL)
     {
-        printf("Error has occured while opening decodecB_handler");
+        printf("Error: %s", dlerror());
         return 1;
     }
 
@@ -32,7 +32,7 @@ int main(int argc, char const *argv[])
     decodeA dcodeA = (decodeA)dlsym(decodecA_handle, "codeA");
     if (dcodeA == NULL)
     {
-        printf("Error has occured while creating pinter to decodeA");
+        printf("Error: %s", dlerror());
         return 1;
     }
 
@@ -40,7 +40,7 @@ int main(int argc, char const *argv[])
     decodeB dcodeB = (decodeB)dlsym(decodecB_handle, "codeB");
     if (dcodeB == NULL)
     {
-        printf("Error has occured while creating pinter to decodeB");
+        printf("Error: %s", dlerror());
         return 1;
     }
 
@@ -58,11 +58,11 @@ int main(int argc, char const *argv[])
     }
     else
     {
-        printf("No such codec %c", decodec);
+        printf("No such codec %s", decodec);
         return 1;
     }
     
-    printf("%c", originalText);
+    printf("%s", originalText);
 
 
     dlclose(decodecA_handle);

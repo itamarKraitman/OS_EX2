@@ -1,15 +1,20 @@
+#!make -f
+
 CC=gcc
 CFLAGS=-Wall -Wextra -fPIC
 LIBRARIES_NAMES=libcodecA.so libcodecB.so
-LIBRARIES_PATH=-libcodecA.so -libcodecB.so
+LIBRARIES_PATH=-L. libcodecA.so libcodecB.so
 
-default: encode decode
 
-encode: encode.o $(LIBRARIES)
-	$(CC) -o encode encode.o -L. $(LIBRARIES_PATH)
+.PHONY: all clean
 
-decode: decode.o $(LIBRARIES)
-	$(CC) -o encode encode.o -L. $(LIBRARIES_PATH)
+all: encode decode
+
+encode: encode.o $(LIBRARIES_NAMES)
+	$(CC) -o encode encode.o $(LIBRARIES_PATH)
+
+decode: decode.o $(LIBRARIES_NAMES)
+	$(CC) -o decode decode.o $(LIBRARIES_PATH)
 
 libcodecA.so: codecA.o
 	$(CC) -shared -o libcodecA.so codecA.o
