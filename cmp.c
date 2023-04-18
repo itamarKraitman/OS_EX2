@@ -6,7 +6,7 @@
 #define BUF_SIZE 1024
 
 bool isEqual(FILE* f1, FILE* f2, int ignoreCaseFl);
-void pribtVerbose(bool result);
+void printVerbose(bool result);
 
 
 // argc - argument count, helps to indicate validate of the input.
@@ -14,7 +14,7 @@ void pribtVerbose(bool result);
 
 int main(int argc, char *argv[])
 {
-    if (argc < 3 && argc > 4)
+    if (argc < 3 && argc > 5)
     {
         printf("usage: cmp <file1> <file2>, or");
         printf("usage: cmp <file1> <file2> -i, or");
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     }
 
     // If the flag are valid and the flags
-    if (argc == 3)
+    if (argc == 4)
     {
         if (strcmp(argv[3], "-v") == 0)
         {
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
             return 1;
         }
     }
-    if (argc == 4)
+    if (argc == 5)
     {
         if ((strcmp(argv[3], "-v") == 0 && strcmp(argv[4], "-i") == 0) ||
             (strcmp(argv[3], "-i") == 0 && strcmp(argv[4], "-v") == 0))

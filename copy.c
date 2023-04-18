@@ -6,12 +6,12 @@
 #define BUF_SIZE 1024
 
 bool copyFile(FILE* f1, FILE* f2, int overwriteFl);
-void pribtVerbose(bool result);
+void printVerbose(bool result, bool fileEx);
 
 
 int main(int argc, char *argv[])
 {
-    if (argc < 3 && argc > 4)
+    if (argc < 3 && argc > 5)
     {
         printf("usage: cmp <file1> <file2>, or");
         printf("usage: cmp <file1> <file2> -f, or");
@@ -25,21 +25,21 @@ int main(int argc, char *argv[])
     char *file2 = argv[2]; // Second file nam
     int verbosFl = 0;      // To print success/target file exist/general failure or 1\0
     int overwriteFl = 0;  // Force copy that allows to overwrite the target file
-    bool fileEx = 0;
+    bool fileEx = false;
     FILE *sourceFile = fopen(file1, "r");
     FILE *destFile = fopen(file2, "r");
 
     
 
 
-    // If the flag are valid and the flags
-    if (argc == 3)
+    
+    if (argc == 4)
     {
         if (strcmp(argv[3], "-v") == 0)
         {
             verbosFl = 1;
         }
-        else if (strcmp(argv[3], "-i") == 0)
+        else if (strcmp(argv[3], "-f") == 0)
         {
             overwriteFl = 1;
         }
@@ -53,10 +53,10 @@ int main(int argc, char *argv[])
             return 1;
         }
     }
-    if (argc == 4)
+    if (argc == 5)
     {
-        if ((strcmp(argv[3], "-v") == 0 && strcmp(argv[4], "-i") == 0) ||
-            (strcmp(argv[3], "-i") == 0 && strcmp(argv[4], "-v") == 0))
+        if ((strcmp(argv[3], "-v") == 0 && strcmp(argv[4], "-f") == 0) ||
+            (strcmp(argv[3], "-f") == 0 && strcmp(argv[4], "-v") == 0))
         {
             verbosFl = 1;
             overwriteFl = 1;
