@@ -66,5 +66,6 @@ int main(int argc, char *argv[])
 
     dlclose(codecA_handle);
     dlclose(codecB_handle);
+    
     return 0;
 }

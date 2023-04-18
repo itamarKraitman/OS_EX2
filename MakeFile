@@ -3,7 +3,7 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -fPIC
 LIBRARIES_NAMES=libcodecA.so libcodecB.so
-LIBRARIES_PATH=-L. libcodecA.so libcodecB.so
+LIBRARIES_PATH=-L. -Wl,-rpath=. libcodecA.so libcodecB.so
 
 
 .PHONY: all clean
@@ -31,6 +31,8 @@ codecB.o: codecB.c codecB.h
 encode.o: encode.c
 	$(CC) $(CFLAGS) -c encode.c
 
+decode.o: decode.c
+	$(CC) $(CFLAGS) -c decode.c
+
 clean:
 	rm -f encode decode $(LIBRARIES_NAMES) *.o 
-
