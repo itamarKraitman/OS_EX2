@@ -110,113 +110,7 @@ int main()
         }
         if (pipe_cmd > 0)
         {
-            // char **argsForPipe = splitArgsToPipe(pipe_cmd, i);
-            // int pipefd[pipe_cmd] - 1;
 
-            // if (pipe(pipefd) == -1)
-            // {
-            //     perror("pipe");
-            //     exit(EXIT_FAILURE);
-            // }
-
-            // int k = 0;
-            // while (k < pipe_cmd)
-            // {
-            //     pid_t first_child = fork();
-            //     if (first_child == -1)
-            //     {
-            //         perror("fork");
-            //         exit(EXIT_FAILURE);
-            //     }
-            //     else if (first_child == 0) // child process
-            //     {
-            //         dup2(pipefd[1], STDOUT_FILENO);
-            //         close(pipefd[0]);
-            //         close(pipefd[1]);
-            //         execvp(copy)
-            //     }
-            // }
-            // pipe_func(pipe_cmd, , )
-            // int file_d[3];
-            // int last = STDIN_FILENO;
-            // for (int j = 0; j < pipe_cmd; j++)
-            // {
-            //     if (j != pipe_cmd - 1)
-            //     {
-            //         if (pipe(file_d) == -1)
-            //         {
-            //             perror("pipe");
-            //             exit(EXIT_FAILURE);
-            //         }
-            //     }
-            //     pid_t pid = fork();
-            //     if (pid == -1)
-            //     {
-            //         perror("fork");
-            //     }
-            //     else if (pid == 0)
-            //     {
-            //         if (last != STDIN_FILENO)
-            //         {
-            //             if (dup2(last, STDIN_FILENO))
-            //             {
-            //                 perror("dup2");
-            //                 exit(EXIT_FAILURE);
-            //             }
-            //             close(last);
-            //         }
-            //         if (j != pipe_cmd - 1)
-            //         {
-            //             if (dup2(file_d[1], STDOUT_FILENO) == -1)
-            //             {
-            //                 perror("dup2");
-            //                 exit(EXIT_FAILURE);
-            //             }
-            //             close(file_d[1]);
-            //         }
-            //         char **cargs;
-            //         int num_args = sizeof(argv) / sizeof(argv[0]);;
-            //         cargs = malloc((num_args + 1) * sizeof(char *));
-            //         if (cargs == NULL)
-            //         {
-            //             perror("malloc");
-            //             exit(EXIT_FAILURE);
-            //         }
-            //         for (int j = 0; j < num_args; j++)
-            //         {
-            //             cargs[j] = malloc((strlen(argv[j]) + 1) * sizeof(char));
-            //             if (cargs[j] == NULL)
-            //             {
-            //                 perror("malloc");
-            //                 exit(EXIT_FAILURE);
-            //             }
-            //             strcpy(cargs[j], argv[j].c_str());
-            //         }
-            //         cargs[num_args] = NULL;
-            //         execvp(cargs[0], cargs);
-            //         perror("execvp failed");
-            //         exit(EXIT_FAILURE);
-            //     }
-            //     else
-            //     {
-            //         {
-            //             // Close input of previous command (if not first command)
-            //             if (last != STDIN_FILENO)
-            //             {
-            //                 close(last);
-            //             }
-            //             // Close output of this command (if not last command)
-            //             if (j != pipe_cmd - 1)
-            //             {
-            //                 close(file_d[1]);
-            //                 last = file_d[0];
-            //             }
-            //             // Wait for command to finish
-            //             wait(NULL);
-            //         }
-            //     }
-            // }
-            // continue;
             int pipefd1[2], pipefd2[2];
             pid_t pid1, pid2, pid3;
             int status;
@@ -241,11 +135,11 @@ int main()
                     perror("dup2");
                     exit(EXIT_FAILURE);
                 }
-                
+
                 // close pipedf1
                 close(pipefd1[0]);
                 close(pipefd1[1]);
-                
+
                 // execute command
                 execvp(argv[0], argv);
                 perror("execvp");
@@ -272,7 +166,7 @@ int main()
                     perror("dup2");
                     exit(EXIT_FAILURE);
                 }
-                
+
                 // close pipefd1 read and write
                 close(pipefd1[1]);
                 close(pipefd1[1]);
@@ -292,7 +186,7 @@ int main()
                 perror("execvp");
                 exit(EXIT_FAILURE);
             }
-            
+
             // parent process
             close(pipefd1[0]);
             close(pipefd1[1]);
@@ -323,10 +217,10 @@ int main()
                 perror("execvp");
                 exit(EXIT_FAILURE);
             }
-            
+
             close(pipefd2[0]);
             close(pipefd2[2]);
-            
+
             waitpid(pid1, &status, 0);
 
             waitpid(pid3, &status, 0);
