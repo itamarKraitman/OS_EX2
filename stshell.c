@@ -294,7 +294,11 @@ int main()
             //         perror("execvp");
             //         exit(1);
             //     }
-            execvp(argv[0], argv);
+            
+            else 
+            {
+                execvp(argv[0], argv);
+            }
         }
         else
         {
