@@ -1,49 +1,262 @@
-#include <sys/stat.h>
+#include <unistd.h>
 #include <sys/wait.h>
-#include <fcntl.h>
-#include "stdio.h"
-#include "errno.h"
-#include "stdlib.h"
-#include "unistd.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
-void redirect_process(int redirect_sign, int outfd, char *outfile)
+#define MAX_SIZE 1024
+
+static char **copyArgs(char **args, int argc)
 {
-    if (redirect_sign == 1) // >
+    char **copy_of_args = malloc(sizeof(char *) * (argc + 1));
+    if (copy_of_args == NULL)
     {
-        outfd = creat(outfile, 0660);
-        // close(STDOUT_FILENO);
-        dup(outfd);
-        close(outfd);
+        perror("malloc");
+        exit(EXIT_FAILURE);
     }
-    else // >>
+
+    int k = 0;
+    while (k < argc)
     {
-        outfd = open(outfile, O_WRONLY | O_CREAT | O_APPEND, 0660);
-        if (outfd < 0)
-        {
-            perror("open");
-            exit(EXIT_FAILURE);
-        }
-        // close(STDOUT_FILENO);
-        dup(outfd);
-        close(outfd);
+        copy_of_args[k] = strdup(args[k]);
+        k++;
     }
+    copy_of_args[k] = 0;
+    return copy_of_args;
 }
 
 void sigint_handler(int signum)
 {
-    printf("Ctrl + C Pressed\n");
+    printf("\nCtrl + C Pressed\n");
+}
+
+char **parseCommand(char *command)
+{
+    int i = 0, bufsize = MAX_SIZE;
+    char *token;
+    char **tokens = malloc(bufsize * sizeof(char *));
+
+    if (tokens == NULL)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    token = strtok(command, " ");
+    while (token != NULL)
+    {
+        tokens[i] = token;
+        i++;
+        token = strtok(NULL, " ");
+    }
+    tokens[i] = NULL;
+
+    return tokens;
+}
+
+int findNumberOfPipes(char **args)
+{
+    int numberOfpipes = 1;
+    int i = 2;
+    while (args[i] != NULL)
+    {
+        if (strcmp(args[i], "|") == 0)
+        {
+            numberOfpipes++;
+        }
+        i++;
+    }
+    return numberOfpipes;
+}
+
+void redirectProcess(char **args, int k, int redirectSign)
+{
+    pid_t pid;
+    int fd, status = 0;
+    char *output = args[k + 1];
+
+    pid = fork();
+    if (pid == 0)
+    {
+        if (redirectSign == 1) // >
+        {
+            fd = open(output, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+        }
+
+        else // >> (2)
+        {
+            fd = open(output, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+        }
+        if (fd < 0)
+        {
+            perror("open");
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            dup2(fd, redirectSign);
+            close(fd);
+            args[k] = NULL;
+            args[k + 1] = NULL;
+
+            if (execvp(args[0], args) == -1)
+            {
+                perror("excevp");
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+    else if (pid < 0)
+    {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+    else // parent process
+    {
+        waitpid(pid, &status, WUNTRACED);
+    }
+}
+
+void onePipeProcess(char **args, int k)
+{
+    int fpipe[2];
+    pid_t pid1, pid2;
+    char **copy_args = copyArgs(args, k);
+
+    if (pipe(fpipe) == -1) // create pipe- one input and one output
+    {
+        perror("pipe");
+        exit(EXIT_FAILURE);
+    }
+
+    pid1 = fork();
+    if (pid1 == 0) /// child process 1
+    {
+        // send STDOUT to output part
+        dup2(fpipe[1], STDOUT_FILENO);
+        close(fpipe[0]);
+        close(fpipe[1]);
+
+        // execute and pass the output as argument
+        execvp(copy_args[0], copy_args);
+        perror("execvp"); // if execution failed
+        exit(EXIT_FAILURE);
+    }
+    else if (pid1 < 0)
+    {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+
+    pid2 = fork();
+    if (pid2 == 0) // child process 2
+    {
+        dup2(fpipe[0], STDIN_FILENO); // send STDIN to input part
+        close(fpipe[1]);
+        close(fpipe[0]);
+
+        execvp(args[k + 1], args + k + 1);
+        perror("execvp"); // if execution failed
+        exit(EXIT_FAILURE);
+    }
+    else if (pid2 < 0)
+    {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+
+    close(fpipe[0]);
+    close(fpipe[1]);
+
+    // wait for child processes to end
+    wait(0);
+    wait(0);
+}
+
+void twoPipesProcess(char **args, int k)
+{
+    int fpipe1[2], fpipe2[2], status;
+    pid_t pid1, pid2, pid3;
+    ;
+    char **copy_args = copyArgs(args, k);
+
+    if (pipe(fpipe1) == -1) // create pipe- one input and one output
+    {
+        perror("pipe");
+        exit(EXIT_FAILURE);
+    }
+
+    pid1 = fork();
+    if (pid1 == 0) /// child process 1
+    {
+        // send STDOUT to output part
+        dup2(fpipe1[1], STDOUT_FILENO);
+        close(fpipe1[0]);
+        close(fpipe1[1]);
+
+        // execute and pass the output as argument
+        execvp(copy_args[0], copy_args);
+        perror("execvp"); // if execution failed
+        exit(EXIT_FAILURE);
+    }
+    else if (pid1 < 0)
+    {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+
+    pid2 = fork();
+    if (pid2 == 0) // child process 2
+    {
+        // send STDIN to input part and close fpipe1
+        dup2(fpipe1[0], STDIN_FILENO);
+        close(fpipe1[1]);
+        close(fpipe1[0]);
+
+        execvp(args[k + 1], args + k + 1);
+        perror("execvp"); // if execution failed
+        exit(EXIT_FAILURE);
+
+        // send STDOUT to output part and close fpipe2
+        dup2(fpipe2[1], STDOUT_FILENO);
+        close(fpipe2[0]);
+        close(fpipe2[1]);
+    }
+    else if (pid2 < 0)
+    {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+
+    waitpid(pid2, &status, 0); // if parent process, wait to child 2 to end
+
+    pid3 = fork();
+    if (pid3 == 0) // child process 3
+    {
+        // send STDIN to input part and close fpipe2
+        dup2(fpipe2[0], STDIN_FILENO);
+        close(fpipe2[1]);
+        close(fpipe2[0]);
+
+        execvp(args[k + 3], args + k + 3);
+        perror("execvp"); // if execution failed
+        exit(EXIT_FAILURE);
+    }
+
+    close(fpipe2[0]);
+    close(fpipe2[1]);
+
+    waitpid(pid1, &status, 0);
+    waitpid(pid3, &status, 0);
 }
 
 int main()
 {
-    int i, redirect, pipe_cmd = 0;
-    char *argv[1024];
-    char command[1024];
-    char *token;
-    char *redirect_sign;
-
-    signal(SIGINT, sigint_handler);
+    char *command = malloc(MAX_SIZE * sizeof(char));
+    char **args;
+    int redirect, pipes, status;
+    signal(SIGINT, sigint_handler); // handle ctrl+c
 
     while (1)
     {
@@ -58,184 +271,63 @@ int main()
             break;
         }
 
-        // parse command line
-        i = 0;
-        token = strtok(command, " ");
-        while (token != NULL)
-        {
-            argv[i] = token;
-            token = strtok(NULL, " ");
-            i++;
-        }
-        argv[i] = NULL;
+        args = parseCommand(command);
 
-        // Is command empty- go to next iteration
-        if (argv[0] == NULL)
+        // if command is empty, wait for next command
+        if (args[0] == NULL)
+        {
             continue;
+        }
 
-        for (i = 0; argv[i] != NULL; i++) // find wether the user used redirect or pipe
+        // find if command contains ">", ">>" or "|";
+        int i = 0;
+        while (args[i] != NULL)
         {
-            if (strcmp(argv[i], ">") == 0 || strcmp(argv[i], ">>") == 0)
+            // find if command contains ">", ">>" or "|"
+            if (strcmp(args[i], ">") == 0)
             {
                 redirect = 1;
-                redirect_sign = argv[i];
             }
-            else if (strcmp(argv[i], "|"))
+            else if (strcmp(args[i], ">>") == 0)
             {
-                pipe_cmd++; // count how many pipe signs are
+                redirect = 2;
             }
-        }
+            else if (strcmp(args[i], "|") == 0)
+            {
+                pipes = 1;
+            }
 
-        if (redirect)
-        {
-            if (fork() == 0)
+            // handle "special" cases
+            if (redirect)
             {
-                int output_fd = 0;
-                char *output_file;
-                if (strcmp(redirect_sign, ">") == 0)
+                redirectProcess(args, i, redirect);
+            }
+
+            else if (pipes) // NOTE! number of pipes can be ONLY 1 or 2
+            {
+                int numberOfPipes = findNumberOfPipes(args);
+                if (numberOfPipes == 1)
                 {
-                    redirect_process(1, output_fd, output_file);
+                    onePipeProcess(args, i);
                 }
                 else
                 {
-                    redirect_process(2, output_fd, output_file);
+                    twoPipesProcess(args, i);
                 }
-                // execvp(argv[0], argv);
             }
-
-            else // parent
-            {
-                wait(0);
-            }
-        }
-        if (pipe_cmd > 0)
-        {
-
-            int pipefd1[2], pipefd2[2];
-            pid_t pid1, pid2, pid3;
-            int status;
-
-            if (pipe(pipefd1) == -1) // first pipe
-            {
-                perror("pipe");
-                exit(EXIT_FAILURE);
-            }
-
-            pid1 = fork(); // first child
-            if (pid1 == -1)
-            {
-                perror("fork");
-                exit(EXIT_FAILURE);
-            }
-
-            if (pid1 == 0) // first child process
-            {
-                if (dup2(pipefd1[1], STDOUT_FILENO) == -1) // redirect std output to pipefd1 write end
-                {
-                    perror("dup2");
-                    exit(EXIT_FAILURE);
-                }
-
-                // close pipedf1
-                close(pipefd1[0]);
-                close(pipefd1[1]);
-
-                // execute command
-                execvp(argv[0], argv);
-                perror("execvp");
-                exit(EXIT_FAILURE);
-            }
-
-            if (pipe(pipefd2) == -1) // second pipe
-            {
-                perror("pipe");
-                exit(EXIT_FAILURE);
-            }
-
-            pid2 = fork(); // second child
-            if (pid2 == -1)
-            {
-                perror("fork");
-                exit(EXIT_FAILURE);
-            }
-
-            if (pid2 == 0) // second child process
-            {
-                if (dup2(pipefd2[0], STDIN_FILENO) == -1) // redirect std output to pipefd1 read end
-                {
-                    perror("dup2");
-                    exit(EXIT_FAILURE);
-                }
-
-                // close pipefd1 read and write
-                close(pipefd1[1]);
-                close(pipefd1[1]);
-
-                if (dup2(pipefd2[1], STDOUT_FILENO) == -1) // redirect std output to pipefd2 write end
-                {
-                    perror("dup2");
-                    exit(EXIT_FAILURE);
-                }
-
-                // close pipedf2
-                close(pipefd2[0]);
-                close(pipefd2[1]);
-
-                // execute command
-                execvp(argv[pipe_cmd / 2], &argv[pipe_cmd / 2]);
-                perror("execvp");
-                exit(EXIT_FAILURE);
-            }
-
-            // parent process
-            close(pipefd1[0]);
-            close(pipefd1[1]);
-
-            waitpid(pid2, &status, 0); // wait for child 2 proces to end
-
-            pid3 = fork();
-            if (pid3 == -1)
-            {
-                perror("fork");
-                exit(EXIT_FAILURE);
-            }
-
-            if (pid3 == 0)
-            {
-                // child 3
-
-                if (dup2(pipefd2[0], STDIN_FILENO) == -1)
-                {
-                    perror("dup2");
-                    exit(EXIT_FAILURE);
-                }
-
-                close(pipefd2[0]);
-                close(pipefd2[1]);
-
-                execvp(argv[pipe_cmd / 2 + 1], &argv[pipe_cmd / 2 + 1]);
-                perror("execvp");
-                exit(EXIT_FAILURE);
-            }
-
-            close(pipefd2[0]);
-            close(pipefd2[2]);
-
-            waitpid(pid1, &status, 0);
-
-            waitpid(pid3, &status, 0);
+            i++;
         }
 
-        /* for commands not part of the shell command language */
-
-        if (fork() == 0)
+        // basic cases
+        pid_t pid = fork();
+        if (pid == 0) // fork success. child initiated
         {
-            execvp(argv[0], argv);
+            execvp(args[0], args);
+            perror("Program execution failed");
             exit(1);
         }
-        else
-        {
-            wait(0);
-        }
+        waitpid(pid, &status, WUNTRACED);
     }
+    free(command);
+    free(args);
 }
