@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     
-    printf("%s", originalText);
+    printf("%s\n", originalText);
 
 
     dlclose(decodecA_handle);

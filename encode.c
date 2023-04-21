@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    printf("%s", code);
+    printf("%s\n", code);
 
     dlclose(codecA_handle);
     dlclose(codecB_handle);

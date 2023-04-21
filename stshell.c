@@ -120,7 +120,7 @@ void redirectProcess(char **args, int k, int redirectSign)
 
 void onePipeProcess(char **args, int k)
 {
-    int fpipe[2];
+    int fpipe[2], status;
     pid_t pid1, pid2;
     char **copy_args = copyArgs(args, k);
 
@@ -135,6 +135,7 @@ void onePipeProcess(char **args, int k)
     {
         // send STDOUT to output part
         dup2(fpipe[1], STDOUT_FILENO);
+        close(STDOUT_FILENO);
         close(fpipe[0]);
         close(fpipe[1]);
 
@@ -169,9 +170,11 @@ void onePipeProcess(char **args, int k)
     close(fpipe[0]);
     close(fpipe[1]);
 
-    // wait for child processes to end
-    wait(0);
-    wait(0);
+    // // wait for child processes to end
+    // wait(NULL);
+    // wait(NULL);
+    waitpid(pid1, &status, WUNTRACED);
+    waitpid(pid2, &status, WUNTRACED);
 }
 
 void twoPipesProcess(char **args, int k)
