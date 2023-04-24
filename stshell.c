@@ -179,79 +179,141 @@ void onePipeProcess(char **args, int k)
 
 void twoPipesProcess(char **args, int k)
 {
-    int fpipe1[2], fpipe2[2], status;
-    pid_t pid1, pid2, pid3;
-    ;
-    char **copy_args = copyArgs(args, k);
+    // int fpipe1[2], fpipe2[2], status;
+    // pid_t pid1, pid2, pid3;
+    // ;
+    // char **copy_args = copyArgs(args, k);
 
-    if (pipe(fpipe1) == -1) // create pipe- one input and one output
+    // if (pipe(fpipe1) == -1) // create pipe- one input and one output
+    // {
+    //     perror("pipe");
+    //     exit(EXIT_FAILURE);
+    // }
+
+    // pid1 = fork();
+    // if (pid1 == 0) /// child process 1
+    // {
+    //     // send STDOUT to output part
+    //     dup2(fpipe1[1], STDOUT_FILENO);
+    //     close(fpipe1[0]);
+    //     close(fpipe1[1]);
+
+    //     // execute and pass the output as argument
+    //     execvp(copy_args[0], copy_args);
+    //     perror("execvp"); // if execution failed
+    //     exit(EXIT_FAILURE);
+    // }
+    // else if (pid1 < 0)
+    // {
+    //     perror("fork");
+    //     exit(EXIT_FAILURE);
+    // }
+
+    // pid2 = fork();
+    // if (pid2 == 0) // child process 2
+    // {
+    //     // send STDIN to input part and close fpipe1
+    //     dup2(fpipe1[0], STDIN_FILENO);
+    //     close(fpipe1[1]);
+    //     close(fpipe1[0]);
+
+    //     execvp(args[k + 1], args + k + 1);
+    //     perror("execvp"); // if execution failed
+    //     exit(EXIT_FAILURE);
+
+    //     // send STDOUT to output part and close fpipe2
+    //     dup2(fpipe2[1], STDOUT_FILENO);
+    //     close(fpipe2[0]);
+    //     close(fpipe2[1]);
+    // }
+    // else if (pid2 < 0)
+    // {
+    //     perror("fork");
+    //     exit(EXIT_FAILURE);
+    // }
+
+    // waitpid(pid2, &status, 0); // if parent process, wait to child 2 to end
+
+    // pid3 = fork();
+    // if (pid3 == 0) // child process 3
+    // {
+    //     // send STDIN to input part and close fpipe2
+    //     dup2(fpipe2[0], STDIN_FILENO);
+    //     close(fpipe2[1]);
+    //     close(fpipe2[0]);
+
+    //     execvp(args[k + 3], args + k + 3);
+    //     perror("execvp"); // if execution failed
+    //     exit(EXIT_FAILURE);
+    // }
+
+    // close(fpipe2[0]);
+    // close(fpipe2[1]);
+
+    // waitpid(pid1, &status, 0);
+    // waitpid(pid3, &status, 0);
+
+    void DoublePipeRedirect(char **args, int k1, int k2)
     {
-        perror("pipe");
-        exit(EXIT_FAILURE);
+        int fpipe[4];
+        char **copy_args1, **copy_args2;
+
+        copy_args1 = copyArgs(args, k1);
+        copy_args2 = copyArgs(args + k1 + 1, k2 - k1 - 1);
+        if (pipe(fpipe) == -1 || pipe(fpipe + 2) == -1)
+        { // Create two pipes with two input pointers and two output pointers
+            perror("pipe redirection failed");
+            return;
+        }
+
+        if (fork() == 0) // child 1
+        {
+            dup2(fpipe[1], STDOUT_FILENO); // Redirect STDOUT to output part of first pipe
+            close(fpipe[0]);               // close first pipe read
+            close(fpipe[1]);               // close first pipe write
+            close(fpipe[2]);               // close second pipe read
+            close(fpipe[3]);               // close second pipe write
+
+            execvp(copy_args1[0], copy_args1); // pass the truncated command line as argument
+            perror("First program execution failed");
+            exit(1);
+        }
+
+        if (fork() == 0) // child 2
+        {
+            dup2(fpipe[0], STDIN_FILENO);  // Redirect STDIN to Input part of first pipe
+            dup2(fpipe[3], STDOUT_FILENO); // Redirect STDOUT to output part of second pipe
+            close(fpipe[1]);               // closing first pipe write
+            close(fpipe[2]);               // close second pipe read
+            close(fpipe[0]);               // close first pipe read
+            close(fpipe[3]);               // close second pipe write
+
+            execvp(copy_args2[0], copy_args2); // pass the truncated command line as argument
+            perror("Second program execution failed");
+            exit(1);
+        }
+
+        if (fork() == 0) // child 3
+        {
+            dup2(fpipe[2], STDIN_FILENO); // Redirect STDIN to Input part of second pipe
+            close(fpipe[1]);              // closing first pipe write
+            close(fpipe[0]);              // close first pipe read
+            close(fpipe[2]);              // close second pipe read
+            close(fpipe[3]);              // close second pipe write
+
+            execvp(args[k2 + 1], args + k2 + 1); // pass the third part of command line as argument
+            perror("Third program execution failed");
+            exit(1);
+        }
+
+        close(fpipe[0]);
+        close(fpipe[1]);
+        close(fpipe[2]);
+        close(fpipe[3]);
+        wait(0); // Wait for child 1 to finish
+        wait(0); // Wait for child 2 to finish
+        wait(0); // Wait for child 3 to finish
     }
-
-    pid1 = fork();
-    if (pid1 == 0) /// child process 1
-    {
-        // send STDOUT to output part
-        dup2(fpipe1[1], STDOUT_FILENO);
-        close(fpipe1[0]);
-        close(fpipe1[1]);
-
-        // execute and pass the output as argument
-        execvp(copy_args[0], copy_args);
-        perror("execvp"); // if execution failed
-        exit(EXIT_FAILURE);
-    }
-    else if (pid1 < 0)
-    {
-        perror("fork");
-        exit(EXIT_FAILURE);
-    }
-
-    pid2 = fork();
-    if (pid2 == 0) // child process 2
-    {
-        // send STDIN to input part and close fpipe1
-        dup2(fpipe1[0], STDIN_FILENO);
-        close(fpipe1[1]);
-        close(fpipe1[0]);
-
-        execvp(args[k + 1], args + k + 1);
-        perror("execvp"); // if execution failed
-        exit(EXIT_FAILURE);
-
-        // send STDOUT to output part and close fpipe2
-        dup2(fpipe2[1], STDOUT_FILENO);
-        close(fpipe2[0]);
-        close(fpipe2[1]);
-    }
-    else if (pid2 < 0)
-    {
-        perror("fork");
-        exit(EXIT_FAILURE);
-    }
-
-    waitpid(pid2, &status, 0); // if parent process, wait to child 2 to end
-
-    pid3 = fork();
-    if (pid3 == 0) // child process 3
-    {
-        // send STDIN to input part and close fpipe2
-        dup2(fpipe2[0], STDIN_FILENO);
-        close(fpipe2[1]);
-        close(fpipe2[0]);
-
-        execvp(args[k + 3], args + k + 3);
-        perror("execvp"); // if execution failed
-        exit(EXIT_FAILURE);
-    }
-
-    close(fpipe2[0]);
-    close(fpipe2[1]);
-
-    waitpid(pid1, &status, 0);
-    waitpid(pid3, &status, 0);
 }
 
 int main()
