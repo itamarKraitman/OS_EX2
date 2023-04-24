@@ -130,7 +130,7 @@ bool isEqual(FILE *f1, FILE *f2, int ignoreCase)
 
 void printVerbose(bool filesEqual)
 {
-    if (isEqual)
+    if (filesEqual)
     {
         printf("equal\n");
     }
