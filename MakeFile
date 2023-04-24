@@ -1,14 +1,14 @@
 #!make -f
 
 CC=gcc
-CFLAGS=-Wall -Wextra -fPIC
+CFLAGS=-Wall -Wextra -fPIC -Wunused-parameter -Wno-unused-parameter
 LIBRARIES_NAMES=libcodecA.so libcodecB.so
 LIBRARIES_PATH=-L. -Wl,-rpath=. libcodecA.so libcodecB.so
 
 
 .PHONY: all clean
 
-all: encode decode
+all: encode decode cmp copy stshell
 
 encode: encode.o $(LIBRARIES_NAMES)
 	$(CC) -o encode encode.o $(LIBRARIES_PATH)
@@ -34,5 +34,24 @@ encode.o: encode.c
 decode.o: decode.c
 	$(CC) $(CFLAGS) -c decode.c
 
+cmp: cmp.o
+	$(CC) -o cmp cmp.o
+
+cmp.o: cmp.c
+	$(CC) $(CFLAGS) -c cmp.c
+
+copy: copy.o
+	$(CC) -o copy copy.o
+
+copy.o: copy.c
+	$(CC) $(CFLAGS) -c copy.c
+
+stshell: stshell.o
+	$(CC) -o stshell stshell.o	
+
+stshell.o: stshell.c
+	$(CC) $(CFLAGS) -c stshell.c 	
+
 clean:
-	rm -f encode decode $(LIBRARIES_NAMES) *.o 
+	rm -f encode decode cmp copy stshell $(LIBRARIES_NAMES) *.o 
+

@@ -5,9 +5,8 @@
 
 #define BUF_SIZE 1024
 
-bool copyFile(FILE* f1, FILE* f2, int overwriteFl);
+bool copyFile(FILE *f1, FILE *f2, int overwriteFl);
 void printVerbose(bool result, bool fileEx);
-
 
 int main(int argc, char *argv[])
 {
@@ -24,15 +23,11 @@ int main(int argc, char *argv[])
     char *file1 = argv[1]; // First file name
     char *file2 = argv[2]; // Second file nam
     int verbosFl = 0;      // To print success/target file exist/general failure or 1\0
-    int overwriteFl = 0;  // Force copy that allows to overwrite the target file
+    int overwriteFl = 0;   // Force copy that allows to overwrite the target file
     bool fileEx = false;
     FILE *sourceFile = fopen(file1, "r");
     FILE *destFile = fopen(file2, "r");
 
-    
-
-
-    
     if (argc == 4)
     {
         if (strcmp(argv[3], "-v") == 0)
@@ -72,25 +67,27 @@ int main(int argc, char *argv[])
         }
     }
 
-
     // If the source exists
     if (sourceFile == NULL)
     {
-        if(verbosFl == 1) printf("general failure\n");
+        if (verbosFl == 1)
+            printf("general failure\n");
         return 1;
     }
 
-
     if (destFile != NULL)
     {
-        if(overwriteFl == 1){
+        if (overwriteFl == 1)
+        {
             remove(file2);
-        }else {
-            if(verbosFl == 1) printf("target file exist\n");
+        }
+        else
+        {
+            if (verbosFl == 1)
+                printf("target file exist\n");
             return 1;
         }
     }
-
 
     bool copy = copyFile(sourceFile, destFile, overwriteFl);
 
@@ -110,10 +107,11 @@ bool copyFile(FILE *sourceFile, FILE *destFile, int overwriteFl)
     char buf1[BUF_SIZE];
     size_t bytes_read;
 
-    while ((bytes_read = fread(buf1, 1, sizeof(buf1), sourceFile)) > 0) {
+    while ((bytes_read = fread(buf1, 1, sizeof(buf1), sourceFile)) > 0)
+    {
         fwrite(buf1, 1, bytes_read, destFile);
     }
- 
+    return true;
 }
 
 void printVerbose(bool copy, bool fileEx)
@@ -122,12 +120,10 @@ void printVerbose(bool copy, bool fileEx)
     {
         printf("success”\n");
     }
-    else if(fileEx)
+    else if (fileEx)
     {
-    printf("target file exist\n");
+        printf("target file exist\n");
     }
-    else printf("general failure\n");
-
+    else
+        printf("general failure\n");
 }
-
-
