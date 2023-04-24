@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <signal.h>
+
 
 #define MAX_SIZE 1024
 
@@ -299,6 +302,8 @@ void twoPipesProcess(char **args, int k1, int k2)
     if (fork() == 0) // child 3
     {
         dup2(fpipe[2], STDIN_FILENO); // Redirect STDIN to Input part of second pipe
+        dup2(fpipe[3], STDOUT_FILENO); // Redirect STDIN to Input part of second pipe
+
         close(fpipe[1]);              // closing first pipe write
         close(fpipe[0]);              // close first pipe read
         close(fpipe[2]);              // close second pipe read
