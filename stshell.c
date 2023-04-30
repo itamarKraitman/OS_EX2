@@ -7,20 +7,19 @@
 
 #define MAX_SIZE 1024
 
-static char **copyArgs(char **args, int argc)
+static char **copyArgs(char **args, int start, int end)
 {
-    char **copy_of_args = malloc(sizeof(char *) * (argc + 1));
+    char **copy_of_args = malloc(sizeof(char *) * (end - start + 1));
     if (copy_of_args == NULL)
     {
         perror("malloc");
         exit(EXIT_FAILURE);
     }
 
-    int k = 0;
-    while (k < argc)
+    int k = start;
+    for (; k < end; k++)
     {
         copy_of_args[k] = strdup(args[k]);
-        k++;
     }
     copy_of_args[k] = 0;
     return copy_of_args;
@@ -53,24 +52,6 @@ char **parseCommand(char *command)
     tokens[i] = NULL;
 
     return tokens;
-}
-
-int* findNumberOfPipes(char **args)
-{
-    int* numberOfpipes = malloc(2 * sizeof(int)); 
-    numberOfpipes[0] = -1;
-    numberOfpipes[1] = -1;
-    int i = 1, j = 0;
-    while (args[i] != NULL)
-    {
-        if (strcmp(args[i], "|") == 0)
-        {
-            numberOfpipes[j] = i;
-            j++;
-        }
-        i++;
-    }
-    return numberOfpipes;
 }
 
 void redirectProcess(char **args, int k, int redirectSign)
@@ -121,11 +102,21 @@ void redirectProcess(char **args, int k, int redirectSign)
     }
 }
 
+int getArrayLength(char** arr) {
+    int len = 0;
+    while (arr[len] != NULL) {
+        len++;
+    }
+    return len;
+}
+
 void onePipeProcess(char **args, int k)
 {
     int fpipe[2], status;
     pid_t pid1, pid2;
-    char **copy_args = copyArgs(args, k);
+    int argsLen = getArrayLength(args);
+    char **first_command = copyArgs(args, 0, k);
+    char **secod_command = copyArgs(args, k + 1, argsLen);
 
     if (pipe(fpipe) == -1) // create pipe- one input and one output
     {
@@ -137,14 +128,15 @@ void onePipeProcess(char **args, int k)
     if (pid1 == 0) /// child process 1
     {
         // send STDOUT to output part
-        dup2(fpipe[1], STDOUT_FILENO);
+        // dup2(fpipe[1], STDOUT_FILENO);
         close(STDOUT_FILENO);
+        dup(fpipe[1]);
         close(fpipe[0]);
-        close(fpipe[1]);
+        // close(fpipe[1]);
 
         // execute and pass the output as argument
-        execvp(copy_args[0], copy_args);
-        perror("execvp"); // if execution failed
+        execvp(first_command[0], first_command);
+        perror("execvp1 faild"); // if execution failed
         exit(EXIT_FAILURE);
     }
     else if (pid1 < 0)
@@ -156,11 +148,13 @@ void onePipeProcess(char **args, int k)
     pid2 = fork();
     if (pid2 == 0) // child process 2
     {
-        dup2(fpipe[0], STDIN_FILENO); // send STDIN to input part
+        close(STDIN_FILENO);
+        dup(fpipe[0]);
+        // dup2(fpipe[0], STDIN_FILENO); // send STDIN to input part
+        // close(fpipe[0]);
         close(fpipe[1]);
-        close(fpipe[0]);
 
-        execvp(args[k + 1], args + k + 1);
+        execvp(secod_command[0], secod_command);
         perror("execvp"); // if execution failed
         exit(EXIT_FAILURE);
     }
@@ -174,8 +168,8 @@ void onePipeProcess(char **args, int k)
     close(fpipe[1]);
 
     // // wait for child processes to end
-    // wait(NULL);
-    // wait(NULL);
+    // wait(0);
+    // wait(0);
     waitpid(pid1, &status, WUNTRACED);
     waitpid(pid2, &status, WUNTRACED);
 }
@@ -256,67 +250,67 @@ void onePipeProcess(char **args, int k)
 // waitpid(pid1, &status, 0);
 // waitpid(pid3, &status, 0);
 
-void twoPipesProcess(char **args, int k1, int k2)
-{
-    int fpipe[4];
-    char **copy_args1, **copy_args2;
+// void twoPipesProcess(char **args, int k1, int k2)
+// {
+//     int fpipe[4];
+//     char **copy_args1, **copy_args2;
 
-    copy_args1 = copyArgs(args, k1);
-    copy_args2 = copyArgs(args + k1 + 1, k2 - k1 - 1);
-    if (pipe(fpipe) == -1 || pipe(fpipe + 2) == -1)
-    { // Create two pipes with two input pointers and two output pointers
-        perror("pipe redirection failed");
-        return;
-    }
+//     copy_args1 = copyArgs(args, k1);
+//     copy_args2 = copyArgs(args + k1 + 1, k2 - k1 - 1);
+//     if (pipe(fpipe) == -1 || pipe(fpipe + 2) == -1)
+//     { // Create two pipes with two input pointers and two output pointers
+//         perror("pipe redirection failed");
+//         return;
+//     }
 
-    if (fork() == 0) // child 1
-    {
-        dup2(fpipe[1], STDOUT_FILENO); // Redirect STDOUT to output part of first pipe
-        close(fpipe[0]);               // close first pipe read
-        close(fpipe[1]);               // close first pipe write
-        close(fpipe[2]);               // close second pipe read
-        close(fpipe[3]);               // close second pipe write
+//     if (fork() == 0) // child 1
+//     {
+//         dup2(fpipe[1], STDOUT_FILENO); // Redirect STDOUT to output part of first pipe
+//         close(fpipe[0]);               // close first pipe read
+//         close(fpipe[1]);               // close first pipe write
+//         close(fpipe[2]);               // close second pipe read
+//         close(fpipe[3]);               // close second pipe write
 
-        execvp(copy_args1[0], copy_args1); // pass the truncated command line as argument
-        perror("First program execution failed");
-        exit(1);
-    }
+//         execvp(copy_args1[0], copy_args1); // pass the truncated command line as argument
+//         perror("First program execution failed");
+//         exit(1);
+//     }
 
-    if (fork() == 0) // child 2
-    {
-        dup2(fpipe[0], STDIN_FILENO);  // Redirect STDIN to Input part of first pipe
-        dup2(fpipe[3], STDOUT_FILENO); // Redirect STDOUT to output part of second pipe
-        close(fpipe[1]);               // closing first pipe write
-        close(fpipe[2]);               // close second pipe read
-        close(fpipe[0]);               // close first pipe read
-        close(fpipe[3]);               // close second pipe write
+//     if (fork() == 0) // child 2
+//     {
+//         dup2(fpipe[0], STDIN_FILENO);  // Redirect STDIN to Input part of first pipe
+//         dup2(fpipe[3], STDOUT_FILENO); // Redirect STDOUT to output part of second pipe
+//         close(fpipe[1]);               // closing first pipe write
+//         close(fpipe[2]);               // close second pipe read
+//         close(fpipe[0]);               // close first pipe read
+//         close(fpipe[3]);               // close second pipe write
 
-        execvp(copy_args2[0], copy_args2); // pass the truncated command line as argument
-        perror("Second program execution failed");
-        exit(1);
-    }
+//         execvp(copy_args2[0], copy_args2); // pass the truncated command line as argument
+//         perror("Second program execution failed");
+//         exit(1);
+//     }
 
-    if (fork() == 0) // child 3
-    {
-        dup2(fpipe[2], STDIN_FILENO); // Redirect STDIN to Input part of second pipe
-        close(fpipe[1]);              // closing first pipe write
-        close(fpipe[0]);              // close first pipe read
-        close(fpipe[2]);              // close second pipe read
-        close(fpipe[3]);              // close second pipe write
+//     if (fork() == 0) // child 3
+//     {
+//         dup2(fpipe[2], STDIN_FILENO); // Redirect STDIN to Input part of second pipe
+//         close(fpipe[1]);              // closing first pipe write
+//         close(fpipe[0]);              // close first pipe read
+//         close(fpipe[2]);              // close second pipe read
+//         close(fpipe[3]);              // close second pipe write
 
-        execvp(args[k2 + 1], args + k2 + 1); // pass the third part of command line as argument
-        perror("Third program execution failed");
-        exit(1);
-    }
+//         execvp(args[k2 + 1], args + k2 + 1); // pass the third part of command line as argument
+//         perror("Third program execution failed");
+//         exit(1);
+//     }
 
-    close(fpipe[0]);
-    close(fpipe[1]);
-    close(fpipe[2]);
-    close(fpipe[3]);
-    wait(0); // Wait for child 1 to finish
-    wait(0); // Wait for child 2 to finish
-    wait(0); // Wait for child 3 to finish
-}
+//     close(fpipe[0]);
+//     close(fpipe[1]);
+//     close(fpipe[2]);
+//     close(fpipe[3]);
+//     wait(0); // Wait for child 1 to finish
+//     wait(0); // Wait for child 2 to finish
+//     wait(0); // Wait for child 3 to finish
+// }
 
 int main()
 {
@@ -354,36 +348,39 @@ int main()
             if (strcmp(args[i], ">") == 0)
             {
                 redirect = 1;
+                break;
             }
             else if (strcmp(args[i], ">>") == 0)
             {
                 redirect = 2;
+                break;
             }
             else if (strcmp(args[i], "|") == 0)
             {
-                pipes = 1;
-            }
-
-            // handle "special" cases
-            if (redirect)
-            {
-                redirectProcess(args, i, redirect);
-            }
-
-            else if (pipes) // NOTE! number of pipes can be ONLY 1 or 2
-            {
-                int* numberOfPipes = findNumberOfPipes(args);
-                if (numberOfPipes[2] == -1) // only one pipe
-                {
-                    onePipeProcess(args, i);
-                }
-                else // two pipes
-                {
-                    twoPipesProcess(args, numberOfPipes[0], numberOfPipes[1]);
-                }
-                free(numberOfPipes);
+                pipes = i;
+                break;
             }
             i++;
+        }
+
+        // handle "special" cases
+        if (redirect)
+        {
+            redirectProcess(args, i, redirect);
+        }
+
+        else if (pipes) // NOTE! number of pipes can be ONLY 1 or 2
+        {
+           
+            if (pipes > 0) // only one pipe
+            {
+                onePipeProcess(args, i);
+            }
+            // else // two pipes
+            // {
+            //     twoPipesProcess(args, numberOfPipes[0], numberOfPipes[1]);
+            // }
+            // free(numberOfPipes);
         }
 
         // basic cases
@@ -395,7 +392,8 @@ int main()
             exit(1);
         }
         waitpid(pid, &status, WUNTRACED);
+
+        free(command);
+        free(args);
     }
-    free(command);
-    free(args);
 }

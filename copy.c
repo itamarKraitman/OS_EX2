@@ -5,8 +5,9 @@
 
 #define BUF_SIZE 1024
 
-bool copyFile(FILE *f1, FILE *f2, int overwriteFl);
-void printVerbose(bool result, bool fileEx);
+bool copyFile(FILE* f1, FILE* f2);
+void printVerbose(bool result);
+
 
 int main(int argc, char *argv[])
 {
@@ -23,11 +24,14 @@ int main(int argc, char *argv[])
     char *file1 = argv[1]; // First file name
     char *file2 = argv[2]; // Second file nam
     int verbosFl = 0;      // To print success/target file exist/general failure or 1\0
-    int overwriteFl = 0;   // Force copy that allows to overwrite the target file
-    bool fileEx = false;
+    int overwriteFl = 0;  // Force copy that allows to overwrite the target file
     FILE *sourceFile = fopen(file1, "r");
-    FILE *destFile = fopen(file2, "r");
+    FILE *destFile = fopen(file2, "wb");
 
+    
+
+
+    
     if (argc == 4)
     {
         if (strcmp(argv[3], "-v") == 0)
@@ -67,33 +71,30 @@ int main(int argc, char *argv[])
         }
     }
 
+
     // If the source exists
     if (sourceFile == NULL)
     {
-        if (verbosFl == 1)
-            printf("general failure\n");
+        if(verbosFl == 1) printf("general failure\n");
         return 1;
     }
 
+
     if (destFile != NULL)
     {
-        if (overwriteFl == 1)
-        {
-            remove(file2);
-        }
-        else
-        {
-            if (verbosFl == 1)
-                printf("target file exist\n");
+        if(overwriteFl == 1){
+            copyFile(sourceFile, destFile);
+        }else {
+            if(verbosFl == 1) printf("target file exist. Use -f to overwrite\n");
             return 1;
         }
     }
 
-    bool copy = copyFile(sourceFile, destFile, overwriteFl);
+    bool copy = copyFile(sourceFile, destFile);
 
     if (verbosFl)
     {
-        printVerbose(copy, fileEx);
+        printVerbose(copy);
     }
 
     fclose(sourceFile);
@@ -102,28 +103,23 @@ int main(int argc, char *argv[])
     return copy ? 0 : 1;
 }
 
-bool copyFile(FILE *sourceFile, FILE *destFile, int overwriteFl)
+bool copyFile(FILE *sourceFile, FILE *destFile)
 {
     char buf1[BUF_SIZE];
     size_t bytes_read;
-
-    while ((bytes_read = fread(buf1, 1, sizeof(buf1), sourceFile)) > 0)
-    {
+    while ((bytes_read = fread(buf1, 1, sizeof(buf1), sourceFile)) > 0) {
         fwrite(buf1, 1, bytes_read, destFile);
     }
     return true;
+ 
 }
 
-void printVerbose(bool copy, bool fileEx)
+void printVerbose(bool copy)
 {
     if (copy)
     {
         printf("success”\n");
     }
-    else if (fileEx)
-    {
-        printf("target file exist\n");
-    }
-    else
-        printf("general failure\n");
+    else printf("general failure\n");
+
 }
