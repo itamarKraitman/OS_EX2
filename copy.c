@@ -5,9 +5,8 @@
 
 #define BUF_SIZE 1024
 
-bool copyFile(FILE* f1, FILE* f2);
+bool copyFile(FILE *f1, FILE *f2);
 void printVerbose(bool result);
-
 
 int main(int argc, char *argv[])
 {
@@ -24,14 +23,9 @@ int main(int argc, char *argv[])
     char *file1 = argv[1]; // First file name
     char *file2 = argv[2]; // Second file nam
     int verbosFl = 0;      // To print success/target file exist/general failure or 1\0
-    int overwriteFl = 0;  // Force copy that allows to overwrite the target file
-    FILE *sourceFile = fopen(file1, "r");
-    FILE *destFile = fopen(file2, "wb");
+    int overwriteFl = 0;   // Force copy that allows to overwrite the target file
+    bool fileEx = false;
 
-    
-
-
-    
     if (argc == 4)
     {
         if (strcmp(argv[3], "-v") == 0)
@@ -71,25 +65,29 @@ int main(int argc, char *argv[])
         }
     }
 
-
     // If the source exists
+    FILE *sourceFile = fopen(file1, "r");
     if (sourceFile == NULL)
     {
-        if(verbosFl == 1) printf("general failure\n");
+        if (verbosFl == 1)
+            printf("general failure\n");
+        fclose(sourceFile);
         return 1;
     }
 
-
-    if (destFile != NULL)
+    if (overwriteFl == 0)
     {
-        if(overwriteFl == 1){
-            copyFile(sourceFile, destFile);
-        }else {
-            if(verbosFl == 1) printf("target file exist. Use -f to overwrite\n");
+        FILE *destFile = fopen(file2, "rb");
+        if (destFile != NULL)
+        {
+            if (verbosFl == 1)
+            printf("target file exist. Use -f to overwrite\n");
+            fclose(destFile);
+            fclose(sourceFile);
             return 1;
         }
     }
-
+    FILE *destFile = fopen(file2, "wb");
     bool copy = copyFile(sourceFile, destFile);
 
     if (verbosFl)
@@ -107,11 +105,11 @@ bool copyFile(FILE *sourceFile, FILE *destFile)
 {
     char buf1[BUF_SIZE];
     size_t bytes_read;
-    while ((bytes_read = fread(buf1, 1, sizeof(buf1), sourceFile)) > 0) {
+    while ((bytes_read = fread(buf1, 1, sizeof(buf1), sourceFile)) > 0)
+    {
         fwrite(buf1, 1, bytes_read, destFile);
     }
     return true;
- 
 }
 
 void printVerbose(bool copy)
@@ -120,6 +118,6 @@ void printVerbose(bool copy)
     {
         printf("success”\n");
     }
-    else printf("general failure\n");
-
+    else
+        printf("general failure\n");
 }
